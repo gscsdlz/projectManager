@@ -25,6 +25,8 @@ class UserController
 
     public function show(Request $request)
     {
+        LogController::insertLog("请求显示用户", $request);
+
         $res = UserModel::get();
 
         $data = [];
@@ -48,6 +50,8 @@ class UserController
 
     public function dels(Request $request)
     {
+        LogController::insertLog("删除用户", $request);
+
         $ids = $request->get('ids');
 
         $row = UserModel::destroy($ids);
@@ -62,6 +66,9 @@ class UserController
 
     public function save(Request $request)
     {
+        LogController::insertLog("保存用户信息", $request);
+
+
         $infos = $request->get('infos');
         foreach ($infos as $pro) {
             UserModel::where('user_id', $pro[0])->update([
@@ -77,6 +84,8 @@ class UserController
 
     public function add(Request $request)
     {
+        LogController::insertLog("添加用户", $request);
+
         $info = $request->get('info');
 
         $errors = [];
@@ -110,6 +119,8 @@ class UserController
 
     public function changePass(Request $request)
     {
+        LogController::insertLog("用户修改密码", $request);
+
         $pass1 = $request->get('pass1');
         $pass2 = $request->get('pass2');
         $user_id = $request->get('user_id');
