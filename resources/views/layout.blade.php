@@ -14,7 +14,7 @@
     <script src="{{ URL::asset('js/formCheck.js') }}"></script>
 </head>
 <body>
-<nav class="navbar navbar-default">
+<nav class="navbar navbar-inverse">
     <div class="container-fluid">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
@@ -44,7 +44,7 @@
 </nav>
 @yield('main')
 <hr/>
-<nav class="navbar navbar-inverse" style="background:rgb(248,248,248); border:0px solid white" role="navigation">
+<nav class="navbar" style="border:0px solid white" role="navigation">
     <div class="container">
         <div class="row">
             <div class="col-md-6 col-md-offset-3 text-center">
