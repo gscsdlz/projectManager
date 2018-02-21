@@ -38,6 +38,8 @@ Route::group(['middleware' => 'normalUser'], function() {
     Route::get('people/getList', 'PeopleController@getList');
 
     Route::get('search', 'RecordController@searchPage');
+    Route::get('export/search', 'RecordController@export');
+
     Route::get('import', 'IndexController@import');
 
     Route::get('export/people', 'PeopleController@export');

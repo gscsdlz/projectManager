@@ -58,17 +58,102 @@ class RecordController extends Controller
 
     public function search(Request $request)
     {
-        $mid = $request->get('member_id', 0);
-        $pid = $request->get('project_id', 0);
-        $stime = $request->get('stime', strtotime(date('Y-m-d')));
-        $etime = $request->get('etime', strtotime(date('Y-m-d')));
-        $page = $request->get('page', 1);
-
-        if($etime < $stime) {
+        $res = $this->getSearchResult($request);
+        if($res === false) {
             return response()->json([
                 'status' => false,
                 'info' => '时间错误',
             ]);
+        } else {
+            return response()->json([
+                'status' => true,
+                'res' => $res,
+            ]);
+        }
+    }
+
+    public function searchPage(){
+        return view('search', [
+            'menu' => 'search'
+        ]);
+    }
+
+    public function export(Request $request)
+    {
+        $res = $this->getSearchResult($request);
+        if($res !== false) {
+            $excel = new \PHPExcel();
+
+            $excel->getDefaultStyle()->getAlignment()
+                ->setHorizontal(\PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            $excel->getDefaultStyle()->getAlignment()
+                ->setVertical(\PHPExcel_Style_Alignment::VERTICAL_CENTER);
+
+            $excel->getProperties()->setCreator("PHPExcel")
+                ->setTitle("记录结果表")
+                ->setSubject("记录结果表");
+
+            $p = $excel->setActiveSheetIndex(0);
+            $p->setCellValue("A1", "记录结果")
+                ->setCellValue("A2", "记录编号")
+                ->setCellValue("B2", "日期")
+                ->setCellValue("C2", "姓名")
+                ->setCellValue("D2", "项目名称")
+                ->setCellValue("E2", "工作内容")
+                ->setCellValue("F2", "工时");
+
+            $excel->getActiveSheet()->mergeCells('A1:F1');
+
+            $excel->getActiveSheet()->getColumnDimension('A')->setWidth(10);
+            $excel->getActiveSheet()->getColumnDimension('B')->setWidth(10);
+            $excel->getActiveSheet()->getColumnDimension('C')->setWidth(10);
+            $excel->getActiveSheet()->getColumnDimension('D')->setWidth(20);
+            $excel->getActiveSheet()->getColumnDimension('E')->setWidth(40);
+            $excel->getActiveSheet()->getColumnDimension('F')->setWidth(10);
+
+            $borderStyle = [
+                'borders' => array(
+                    'allborders' => array(
+                        'style' => \PHPExcel_Style_Border::BORDER_THIN,
+                    ),
+                ),
+            ];
+            $p->getStyle("A1:F1")->applyFromArray($borderStyle);
+            $p->getStyle("A2:F2")->applyFromArray($borderStyle);
+            $i = 3;
+            foreach ($res as $row) {
+                $p->getStyle("A".$i.":F".$i)->applyFromArray($borderStyle);
+                $p->setCellValue("A" . $i, $row->record_id);
+                $p->setCellValue("B" . $i, date('Y-m-d', $row->record_time));
+                $p->setCellValue("C" . $i, $row->member_name);
+                $p->getStyle("D".$i)->getAlignment()->setWrapText(true);
+                $p->setCellValue("D" . $i, $row->project_name);
+                $p->getStyle("E".$i)->getAlignment()->setWrapText(true);
+                $p->setCellValue("E" . $i, $row->content);
+                if($row->project_total1 == 0)
+                    $p->setCellValue("F" . $i, $row->project_total2);
+                else
+                    $p->setCellValue("F" . $i, $row->project_total1);
+                $i++;
+            }
+
+            header('Content-Type: application/vnd.ms-excel');
+            header('Content-Disposition: attachment;filename="记录结果表.xls"');
+            header('Cache-Control: max-age=0');
+            $objWriter = \PHPExcel_IOFactory::createWriter($excel, 'Excel5');
+            $objWriter->save('php://output');
+        }
+    }
+
+    protected function getSearchResult(Request $request)
+    {
+        $mid = $request->get('member_id', 0);
+        $pid = $request->get('project_id', 0);
+        $stime = $request->get('stime', strtotime(date('Y-m-d')));
+        $etime = $request->get('etime', strtotime(date('Y-m-d')));
+
+        if($etime < $stime) {
+            return false;
         }
         $res = RecordModel::select('record_id', 'content', 'record_time', 'record.project_total1', 'record.project_total2', 'project_name', 'member_name')
             ->leftJoin('project', 'project.project_id' , '=', 'record.project_id')
@@ -80,17 +165,6 @@ class RecordController extends Controller
         if($etime != 0 && $stime != 0)
             $res = $res->where([['record_time', '>=', $stime],['record_time', '<=', $etime] ]);
 
-        $res =  $res->get();
-
-        return response()->json([
-            'status' => true,
-            'res' => $res,
-        ]);
-    }
-
-    public function searchPage(){
-        return view('search', [
-            'menu' => 'search'
-        ]);
+        return $res->get();
     }
 }

@@ -10,7 +10,7 @@
         <hr/>
         <button class="btn btn-default" type="button" onclick="window.location.href='{{ URL("export/people") }}'">下载参与人员数据</button>
         <button class="btn btn-default" type="button">下载项目数据</button>
-        <button class="btn btn-default" type="button">下载进度数据</button>
+        <button class="btn btn-default" type="button" onclick="window.location.href='{{ URL("export/search?project_id=0&member_id=0&stime=0&etime=0") }}'">下载进度数据</button>
         <hr/>
     </div>
 </div>

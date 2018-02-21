@@ -225,6 +225,10 @@
             }
         })
 
+        $("#export").click(function(){
+            window.location.href="{{ URL('export/search')."?member_id=" }}" + member_id + "&project_id=" + project_id + "&stime=" + stime + "&etime=" + etime;
+        })
+
         function update_table()
         {
             var len = res.length;
