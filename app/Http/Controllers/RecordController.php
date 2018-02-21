@@ -41,7 +41,15 @@ class RecordController extends Controller
         $data = $request->get('data');
         $date = $request->get('date');
         $args = [];
+        $pt1 = 0.0;
+        $pt2 = 0.0;
+        $pt3 = 0.0;
+        $p_etime = $p_etime = (strtotime($date));
+
         foreach ($data as $row) {
+            $pt1 += (float)$row[1];
+            $pt2 += (float)$row[2];
+            $pt3 += (float)$row[1] + (float)$row[2];
             $args[] = [
                 'project_id' => $project_id,
                 'member_id' => $row[0],
@@ -53,6 +61,17 @@ class RecordController extends Controller
             ];
         }
         $res = DB::table('record')->insert($args);
+
+        $p = ProjectModel::select('project_total1', 'project_total2', 'project_total3', 'project_etime')
+            ->where('project_id', $project_id)->first();
+
+        ProjectModel::where('project_id', $project_id)->update([
+           'project_total1' => $p->project_total1 + $pt1,
+           'project_total2' => $p->project_total2 + $pt2,
+           'project_total3' => $p->project_total3 + $pt3,
+           'project_etime' => max($p->project_etime,$p_etime),
+        ]);
+
         return response()->json([
             'status' => true,
             'ids' => $res

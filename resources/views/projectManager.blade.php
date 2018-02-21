@@ -43,11 +43,11 @@
                 {'type' : 'text'},
                 {'type' : 'text'},
                 {'type' : 'text'},
-                {'type' : 'text'},
-                {'type' : 'text'},
-                {'type' : 'text'},
+                {'edit' : false},
+                {'edit' : false},
+                {'edit' : false},
                 {'type' : 'date'},
-                {'type' : 'date'},
+                {'edit' : false},
             ]
         });
             })
