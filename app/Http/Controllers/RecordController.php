@@ -18,6 +18,8 @@ class RecordController extends Controller
 {
     public function index(Request $request, $project_id = 0)
     {
+        LogController::insertLog("进度录入界面切换", $request);
+
         $project = ProjectModel::select("project_id", "project_name")->where('project_id', $project_id)->first();
         if(is_null($project))
             return view('insert', [
@@ -33,6 +35,8 @@ class RecordController extends Controller
 
     public function insert(Request $request)
     {
+        LogController::insertLog("新增进度", $request);
+
         $project_id = $request->get('project_id');
         $data = $request->get('data');
         $date = $request->get('date');
@@ -58,6 +62,8 @@ class RecordController extends Controller
 
     public function search(Request $request)
     {
+        LogController::insertLog("查询进度", $request);
+
         $res = $this->getSearchResult($request);
         if($res === false) {
             return response()->json([
@@ -80,6 +86,8 @@ class RecordController extends Controller
 
     public function export(Request $request)
     {
+        LogController::insertLog("导出查询结果", $request);
+
         $res = $this->getSearchResult($request);
         if($res !== false) {
             $excel = new \PHPExcel();
