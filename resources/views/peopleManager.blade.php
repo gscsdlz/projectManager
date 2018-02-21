@@ -2,7 +2,7 @@
 @section('main')
 <div class="row">
     <div class="col-md-6 col-md-offset-3">
-        <h1>参与人员管理</h1>
+        <h1>员工管理</h1>
         <form class="form-horizontal">
             <div class="form-group">
                 <div class="col-sm-3">

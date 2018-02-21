@@ -29,10 +29,10 @@
             <ul class="nav navbar-nav">
                 <li @if(isset($menu) && $menu == 'index')class="active"@endif><a href="{{ URL('/') }}">首页</a></li>
                 <li @if(isset($menu) && $menu == 'projectManager')class="active"@endif><a href="{{ URL('project') }}">项目管理</a></li>
-                <li @if(isset($menu) && $menu == 'peopleManager')class="active"@endif><a href="{{ URL('people') }}">参与人员管理</a></li>
+                <li @if(isset($menu) && $menu == 'peopleManager')class="active"@endif><a href="{{ URL('people') }}">员工管理</a></li>
                 <li @if(isset($menu) && $menu == 'search')class="active"@endif><a href="{{ URL('search') }}">查询</a></li>
                 <li @if(isset($menu) && $menu == 'insert')class="active"@endif><a href="{{  URL('insert') }}">进度录入</a></li>
-                <li @if(isset($menu) && $menu == 'import')class="active"@endif><a href="{{ URL('import') }}">数据导入导出</a></li>
+                <li @if(isset($menu) && $menu == 'import')class="active"@endif><a href="{{ URL('import') }}">导入导出</a></li>
                 <li @if(isset($menu) && $menu == 'userManager')class="active"@endif><a href="{{ URL('user') }}">用户管理</a></li>
                 <li @if(isset($menu) && $menu == 'logManager')class="active"@endif><a href="{{ URL('log') }}">操作日志</a></li>
             </ul>
