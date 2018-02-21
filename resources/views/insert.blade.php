@@ -172,9 +172,7 @@
                         var total2 = $(this).children().eq(3).children().eq(0).val();
                         var content = $(this).children().eq(4).children().eq(0).val();
 
-                        if ($(t).attr('type') == "text" && total1 == 0 && total2 == 0 && content.length == 0)
-                            ;
-                        else {
+                        {
 
                             if ($(t).attr("type") == "text" || $(t).children().length == 0) {
                                 $(t).parent().after('<p class="text-danger">还未选择用户</p>')
@@ -184,6 +182,10 @@
                             if (total1 == 0 && total2 == 0) {
                                 $(this).children().eq(2).addClass('has-error');
                                 $(this).children().eq(3).addClass('has-error');
+                            } else if(total1 != 0 && total2 != 0) {
+                                $(this).children().eq(2).addClass('has-error');
+                                $(this).children().eq(3).addClass('has-error');
+                                $(this).children().eq(2).append("<p class='text-danger'>计量总工和综合总工只能填写一个</p>")
                             } else {
                                 tmp.push(total1);
                                 tmp.push(total2);
@@ -193,14 +195,13 @@
                             } else {
                                 tmp.push(content);
                             }
-                            console.log(tmp);
                             if (tmp.length == 4)
                                 data.push(tmp);
                         }
                     }
                 })
 
-                if (data.length != 0 && $("form").find(".has-error").length == 0 && $("form").find("p.text-danger").length == 0) {
+                if (data.length == $("form").children(".form-group").length - 1 && $("form").find(".has-error").length == 0 && $("form").find("p.text-danger").length == 0) {
                     $("#save").html("保存中...请稍后");
                     $.post("{{ URL('record/insert') }}", {
                         project_id: "{{ $project_id }}",
