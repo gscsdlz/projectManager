@@ -27,7 +27,7 @@ class LogController
     {
         $page = $request->get('currentPage', 1);
         $total = LogModel::count();
-        $pms = 20;
+        $pms = 100;
 
         if($page <= 0)
             $page = 1;
