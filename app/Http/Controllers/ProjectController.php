@@ -215,4 +215,83 @@ class ProjectController extends Controller
             'data' => $data,
         ]);
     }
+
+    public function export(Request $request)
+    {
+        $res = ProjectModel::select('project_id', 'project_name', 'project_attr', 'project_stime', 'project_etime', 'project_total1', 'project_total2', 'project_total3')
+            ->get();
+
+        $excel = new \PHPExcel();
+        $excel->getProperties()->setCreator("PHPExcel")
+            ->setTitle("项目信息表")
+            ->setSubject("信息表");
+        $p = $excel->setActiveSheetIndex(0);
+
+        $p->setCellValue("A1", "项目信息表")
+            ->setCellValue("A2", "编号")
+            ->setCellValue("B2", "项目名称")
+            ->setCellValue("C2", "建筑面积")
+            ->setCellValue("D2", "层数")
+            ->setCellValue("E2", "檐高")
+            ->setCellValue("F2", "总造价")
+            ->setCellValue("G2", "计量总工")
+            ->setCellValue("H2", "综合总工")
+            ->setCellValue("I2", "工日合计")
+            ->setCellValue("J2", "开始时间")
+            ->setCellValue("K2", "结束时间");
+
+        $excel->getActiveSheet()->getColumnDimension('A')->setWidth(10);
+        $excel->getActiveSheet()->getColumnDimension('B')->setWidth(30);
+        $excel->getActiveSheet()->getColumnDimension('C')->setWidth(10);
+        $excel->getActiveSheet()->getColumnDimension('D')->setWidth(10);
+        $excel->getActiveSheet()->getColumnDimension('E')->setWidth(10);
+        $excel->getActiveSheet()->getColumnDimension('F')->setWidth(10);
+        $excel->getActiveSheet()->getColumnDimension('G')->setWidth(10);
+        $excel->getActiveSheet()->getColumnDimension('H')->setWidth(10);
+        $excel->getActiveSheet()->getColumnDimension('I')->setWidth(10);
+        $excel->getActiveSheet()->getColumnDimension('J')->setWidth(10);
+        $excel->getActiveSheet()->getColumnDimension('K')->setWidth(10);
+
+
+        $excel->getActiveSheet()->mergeCells('A1:K1');
+        $excel->getActiveSheet()->getStyle("A1")->getAlignment()->setHorizontal(\PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+        $borderStyle = [
+            'borders' => array(
+                'allborders' => array(
+                    'style' => \PHPExcel_Style_Border::BORDER_THIN,
+                ),
+            ),
+        ];
+        $p->getStyle("A1:K1")->applyFromArray($borderStyle);
+        $p->getStyle("A2:K2")->applyFromArray($borderStyle);
+        $i = 3;
+        foreach ($res as $row) {
+            $p->getStyle("A".$i.":K".$i)->applyFromArray($borderStyle);
+
+            $jtmp = json_decode($row->project_attr, true);
+
+            $p->getStyle("B".$i)->getAlignment()->setWrapText(true);
+
+
+            $p->setCellValue("A".$i, $row->project_id)
+                ->setCellValue("B".$i, $row->project_name)
+                ->setCellValue("C".$i, $jtmp[0])
+                ->setCellValue("D".$i, $jtmp[1])
+                ->setCellValue("E".$i, $jtmp[2])
+                ->setCellValue("F".$i, $jtmp[3])
+                ->setCellValue("G".$i, $row->project_total1)
+                ->setCellValue("H".$i, $row->project_total2)
+                ->setCellValue("I".$i, $row->project_total3)
+                ->setCellValue("J".$i, date('Y-m-d', $row->project_stime))
+                ->setCellValue("K".$i, date('Y-m-d', $row->project_etime));
+            $i++;
+        }
+
+
+        header('Content-Type: application/vnd.ms-excel');
+        header('Content-Disposition: attachment;filename="项目信息表.xls"');
+        header('Cache-Control: max-age=0');
+        $objWriter = \PHPExcel_IOFactory::createWriter($excel, 'Excel5');
+        $objWriter->save('php://output');
+    }
 }

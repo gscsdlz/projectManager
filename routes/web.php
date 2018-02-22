@@ -30,6 +30,7 @@ Route::group(['middleware' => 'normalUser'], function() {
         Route::post('project/add', 'ProjectController@add');
         Route::get('project/search', 'ProjectController@search');
         Route::post('project/search', 'ProjectController@search');
+        Route::get('export/project', 'ProjectController@export');
     });
     Route::get('project/getList', 'ProjectController@getList');
     Route::get('project/getAllList', 'ProjectController@getAllList');
