@@ -47,7 +47,10 @@
                     }
                 }
                 if (!find) {
-                    str += '<th>' + settings.title[i] + '</th>'
+                    if(settings.typeConfig[i].edit === false)
+                        str += '<th>' + settings.title[i] + '</th>'
+                    else
+                        str += '<th class="text-danger">' + settings.title[i] + '</th>'
                 }
             }
             if (settings.noOperator == false) {
