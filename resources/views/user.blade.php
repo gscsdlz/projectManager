@@ -5,6 +5,7 @@
         <h1>系统用户管理</h1>
         <hr/>
         <p class="text-danger">新增用户的密码将会被默认修改为123456，新增用户后请重新修改</p>
+        <p class="text-danger">普通用户仅能修改自己的密码</p>
         <hr/>
         <table id="users">
         </table>
@@ -58,6 +59,7 @@
                         {'edit': false},
                         {'type': 'text'},
                         {'edit': false},
+                        @if(Session::get('privilege') == 1)
                         {
                             'type': 'select',
                             'options': [
@@ -65,10 +67,20 @@
                                 ['1', '管理员'],
                             ]
                         },
+                        @else
+                        {
+                            'edit' : false
+                        },
+                        @endif
                         {'edit': false},
                         {'edit': false},
                         {'edit': false},
                     ],
+                    @if(Session::get('privilege') != 1)
+                    'noAdd' : true,
+                    'noSave' : true,
+                    'noDel' : true,
+                    @endif
                     'data': res.data,
                     'saveURL' : "{{ URL('user/update') }}",
                     'delsURL' : "{{ URL('user/dels') }}",
@@ -95,6 +107,7 @@
                 $.post("{{ URL('user/changePass') }}", {pass1:p1, pass2:p2, user_id:id}, function(res){
                     if(res.status == true) {
                         $("#info").html("修改成功!");
+                        window.setTimeout(function(){$("#passwordModal").modal('hide');}, 2000);
                     } else {
                         $("#info").html("修改失败!");
                     }
@@ -104,7 +117,7 @@
     })
 
     function changePassword(target) {
-        id = $(target).children().eq(1).html();
+        id = $(target).children().eq(0).html();
         $("#passwordModal").modal();
 
     }
