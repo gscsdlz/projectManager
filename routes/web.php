@@ -28,14 +28,18 @@ Route::group(['middleware' => 'normalUser'], function() {
     Route::get('project/getList', 'ProjectController@getList');
     Route::get('project/getAllList', 'ProjectController@getAllList');
 
-    Route::get('people', 'PeopleController@index');
-    Route::get('people/get', 'PeopleController@get');
-    Route::post('people/dels', 'PeopleController@dels');
-    Route::post('people/update', 'PeopleController@save');
-    Route::post('people/add', 'PeopleController@add');
-    Route::get('people/search', 'PeopleController@search');
-    Route::post('people/search', 'PeopleController@search');
-    Route::get('people/getList', 'PeopleController@getList');
+
+    Route::group(['middleware' => 'adminUser'], function(){
+        Route::get('people', 'PeopleController@index');
+        Route::get('people/get', 'PeopleController@get');
+        Route::post('people/dels', 'PeopleController@dels');
+        Route::post('people/update', 'PeopleController@save');
+        Route::post('people/add', 'PeopleController@add');
+        Route::get('people/search', 'PeopleController@search');
+        Route::post('people/search', 'PeopleController@search');
+        Route::get('people/getList', 'PeopleController@getList');
+    });
+
 
     Route::get('search', 'RecordController@searchPage');
     Route::get('export/search', 'RecordController@export');
