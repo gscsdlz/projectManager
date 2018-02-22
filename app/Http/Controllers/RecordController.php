@@ -13,6 +13,7 @@ use App\Model\ProjectModel;
 use App\Model\RecordModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 
 class RecordController extends Controller
 {
@@ -101,6 +102,85 @@ class RecordController extends Controller
         return view('search', [
             'menu' => 'search'
         ]);
+    }
+
+    public function update(Request $request)
+    {
+        $record_id = $request->get('record_id');
+        $pt1 = $request->get('pt1');
+        $pt2 = $request->get('pt2');
+        $content = $request->get('content');
+        $record_time = strtotime($request->get('record_time'));
+
+        if (($pt1 == 0 && $pt2 == 0) ||($pt1 != 0 && $pt2 != 0) || strlen($content) == 0 || $record_time == 0)
+            return response()->json(
+                ['status' => false]
+            );
+
+        $rec = RecordModel::select('record_time', 'project_id')
+            ->where('record_id', $record_id)->first();
+
+        if (Session::get('privilege') == 0) {
+            if ($rec->record_time + 259200 < strtotime(date('Y-m-d'))) {
+                return response()->json(
+                    [
+                        'status' => false,
+                        'info' => '该记录现在已经不能修改了'
+                    ]
+                );
+            }
+        }
+
+        RecordModel::where('record_id', $record_id)->update([
+           'content' => $content,
+           'record_time' => $record_time,
+            'project_total1' => (float)$pt1,
+            'project_total2' => (float)$pt2,
+        ]);
+        $total = RecordModel::selectRaw('SUM(project_total1) AS pt1, SUM(project_total2) AS pt2')
+            ->where('project_id', $rec->project_id)->first();
+        ProjectModel::where('project_id', $rec->project_id)->update([
+            'project_total1' => $total->pt1,
+            'project_total2' => $total->pt2,
+            'project_total3' => $total->pt1 + $total->pt2,
+        ]);
+
+        return response()->json([
+            'status' => true,
+        ]);
+    }
+
+    public function del(Request $request)
+    {
+        $record_id = $request->get('record_id');
+
+        $rec = RecordModel::select('record_time', 'project_id')
+            ->where('record_id', $record_id)->first();
+
+        if (Session::get('privilege') == 0) {
+            if ($rec->record_time + 259200 < strtotime(date('Y-m-d'))) {
+                return response()->json(
+                    [
+                        'status' => false,
+                        'info' => '该记录您目前无法删除！'
+                    ]
+                );
+            }
+        }
+
+        RecordModel::destroy($record_id);
+        $total = RecordModel::selectRaw('SUM(project_total1) AS pt1, SUM(project_total2) AS pt2')
+            ->where('project_id', $rec->project_id)->first();
+        ProjectModel::where('project_id', $rec->project_id)->update([
+            'project_total1' => $total->pt1,
+            'project_total2' => $total->pt2,
+            'project_total3' => $total->pt1 + $total->pt2,
+        ]);
+
+        return response()->json([
+            'status' => true,
+        ]);
+
     }
 
     public function export(Request $request)

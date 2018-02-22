@@ -16,19 +16,27 @@ Route::group(['middleware' => 'normalUser'], function() {
     Route::get('insert/{project_id?}', 'RecordController@index');
     Route::post('record/insert', 'RecordController@insert');
     Route::get('record/search', 'RecordController@search');
+    Route::post('record/update', 'RecordController@update');
+    Route::post('record/del', 'RecordController@del');
 
-    Route::get('project', 'ProjectController@index');
-    Route::get('project/get', 'ProjectController@get');
-    Route::post('project/dels', 'ProjectController@dels');
-    Route::post('project/update', 'ProjectController@save');
-    Route::post('project/add', 'ProjectController@add');
-    Route::get('project/search', 'ProjectController@search');
-    Route::post('project/search', 'ProjectController@search');
-
+    /**
+     * 项目管理 仅允许查看列表
+     */
+    Route::group(['middleware' => 'adminUser'], function(){
+        Route::get('project', 'ProjectController@index');
+        Route::get('project/get', 'ProjectController@get');
+        Route::post('project/dels', 'ProjectController@dels');
+        Route::post('project/update', 'ProjectController@save');
+        Route::post('project/add', 'ProjectController@add');
+        Route::get('project/search', 'ProjectController@search');
+        Route::post('project/search', 'ProjectController@search');
+    });
     Route::get('project/getList', 'ProjectController@getList');
     Route::get('project/getAllList', 'ProjectController@getAllList');
 
-
+    /**
+     * 员工管理 仅允许查看列表
+     */
     Route::group(['middleware' => 'adminUser'], function(){
         Route::get('people', 'PeopleController@index');
         Route::get('people/get', 'PeopleController@get');
@@ -37,26 +45,35 @@ Route::group(['middleware' => 'normalUser'], function() {
         Route::post('people/add', 'PeopleController@add');
         Route::get('people/search', 'PeopleController@search');
         Route::post('people/search', 'PeopleController@search');
-        Route::get('people/getList', 'PeopleController@getList');
+        Route::get('export/people', 'PeopleController@export');
     });
-
+    Route::get('people/getList', 'PeopleController@getList');
 
     Route::get('search', 'RecordController@searchPage');
     Route::get('export/search', 'RecordController@export');
 
     Route::get('import', 'IndexController@import');
 
-    Route::get('export/people', 'PeopleController@export');
-
+    /**
+     * 用户管理 普通用户仅允许查看自己 修改自己的密码
+     */
     Route::get('user', 'UserController@index');
     Route::get('user/show', 'UserController@show');
-    Route::post('user/dels', 'UserController@dels');
-    Route::post('user/update', 'UserController@save');
-    Route::post('user/add', 'UserController@add');
     Route::post('user/changePass', 'UserController@changePass');
 
-    Route::get('log', 'LogController@index');
-    Route::get('log/show', 'LogController@show');
+    Route::group(['middleware' => 'adminUser'], function (){
+        Route::post('user/update', 'UserController@save');
+        Route::post('user/dels', 'UserController@dels');
+        Route::post('user/add', 'UserController@add');
+    });
+
+    /**
+     * 日志 普通用户不查看日志
+     */
+    Route::group(['middleware' => 'adminUser'], function () {
+        Route::get('log', 'LogController@index');
+        Route::get('log/show', 'LogController@show');
+    });
 
 });
 Route::any('logout', 'UserController@logout');
