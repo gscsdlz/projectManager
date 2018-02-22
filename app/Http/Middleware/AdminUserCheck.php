@@ -9,15 +9,22 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
 
 class AdminUserCheck
 {
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next)
     {
-        if(!Session::has('user_id'))
-            return view('login');
-        else if(Session::get('privilege') != 1)
-            return response()->view('404', [],404);
+        if (Session::get('privilege') != 1)
+            if (!$request->ajax()) {
+                return response()->view('errors.404', [], 404);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'info' => 'login first',
+                ]);
+            }
         return $next($request);
     }
 }
