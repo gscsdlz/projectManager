@@ -22,7 +22,7 @@ class AdminUserCheck
             } else {
                 return response()->json([
                     'status' => false,
-                    'info' => 'login first',
+                    'info' => 'privilege error',
                 ]);
             }
         return $next($request);
