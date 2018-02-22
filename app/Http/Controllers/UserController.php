@@ -27,15 +27,30 @@ class UserController
     {
         LogController::insertLog("请求显示用户", $request);
 
-        $res = UserModel::get();
-
         $data = [];
-        foreach ($res as $row) {
+
+        if (Session::get('privilege') == 1) {
+            $res = UserModel::get();
+
+            foreach ($res as $row) {
+                $data[] = [
+                    $row->user_id,
+                    $row->username,
+                    '******',
+                    $row->privilege,
+                    $row->created_at->toDateString(),
+                    date('Y-m-d H:i:s', $row->last_time),
+                    $row->last_ip,
+                ];
+            }
+
+        } else {
+            $row = UserModel::where('user_id', Session::get('user_id'))->first();
             $data[] = [
                 $row->user_id,
                 $row->username,
                 '******',
-                $row->privilege,
+                '普通用户',
                 $row->created_at->toDateString(),
                 date('Y-m-d H:i:s', $row->last_time),
                 $row->last_ip,
@@ -125,6 +140,15 @@ class UserController
         $pass2 = $request->get('pass2');
         $user_id = $request->get('user_id');
 
+        if(Session::get('privilege') != 1 && $user_id !=  Session::get('user_id')) {
+            return response()->json(
+                [
+                'status' => false,
+                'info' => '权限不足',
+                ]
+            );
+        }
+
         if($pass1 == $pass2 && strlen($pass1) > 0) {
             $res = UserModel::where('user_id', $user_id)->update(
                 ['password' => sha1($pass1)]
@@ -153,7 +177,7 @@ class UserController
             if (isset($user) && $user->username == $username && $user->password == sha1($password)) {
                 Session::put('user_id', $user->user_id);
                 Session::put('username', $user->username);
-                Session::put('pri', $user->privilege);
+                Session::put('privilege', $user->privilege);
                 UserModel::where('user_id', $user->user_id)->update([
                     'last_time' => time(),
                     'last_ip' => $request->server('REMOTE_ADDR'),
