@@ -176,10 +176,10 @@ class PeopleController extends Controller
 
         $excel = new \PHPExcel();
         $excel->getProperties()->setCreator("PHPExcel")
-            ->setTitle("参与人员信息表")
+            ->setTitle("员工信息表")
             ->setSubject("信息表");
         $p = $excel->setActiveSheetIndex(0);
-        $p->setCellValue("A1", "参与人员信息表");
+        $p->setCellValue("A1", "员工信息表");
         $p->setCellValue("A2", "编号")
             ->setCellValue("B2", "姓名")
             ->setCellValue("C2", "部门号")
@@ -211,7 +211,7 @@ class PeopleController extends Controller
 
 
         header('Content-Type: application/vnd.ms-excel');
-        header('Content-Disposition: attachment;filename="参与人员信息表.xls"');
+        header('Content-Disposition: attachment;filename="员工信息表.xls"');
         header('Cache-Control: max-age=0');
         $objWriter = \PHPExcel_IOFactory::createWriter($excel, 'Excel5');
         $objWriter->save('php://output');
