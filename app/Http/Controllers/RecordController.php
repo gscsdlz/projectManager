@@ -65,13 +65,6 @@ class RecordController extends Controller
         }
         $res = DB::table('record')->insert($args);
 
-        $p = ProjectModel::select('project_etime')
-            ->where('project_id', $project_id)->first();
-
-        ProjectModel::where('project_id', $project_id)->update([
-           'project_etime' => max($p->project_etime,$p_etime),
-        ]);
-
         return response()->json([
             'status' => true,
             'ids' => $res
@@ -136,12 +129,6 @@ class RecordController extends Controller
             'project_total1' => (float)$pt1,
             'project_total2' => (float)$pt2,
         ]);
-        $p = ProjectModel::select('project_etime')
-            ->where('project_id', $rec->project_id)->first();
-
-        ProjectModel::where('project_id', $rec->project_id)->update([
-            'project_etime' => max($p->project_etime,$record_time),
-        ]);
 
         return response()->json([
             'status' => true,
@@ -167,13 +154,6 @@ class RecordController extends Controller
         }
 
         RecordModel::destroy($record_id);
-        $total = RecordModel::selectRaw('SUM(project_total1) AS pt1, SUM(project_total2) AS pt2')
-            ->where('project_id', $rec->project_id)->first();
-        ProjectModel::where('project_id', $rec->project_id)->update([
-            'project_total1' => $total->pt1,
-            'project_total2' => $total->pt2,
-            'project_total3' => $total->pt1 + $total->pt2,
-        ]);
 
         return response()->json([
             'status' => true,
@@ -284,57 +264,86 @@ class RecordController extends Controller
         $extension = $file->getClientOriginalExtension();
         if ($extension == 'xls' || $extension == 'xlsx') {
             $path = $file->storeAs('tmp', time() . rand(0, 1000) .'.'.$extension);
-            return response()->json(
-                ['status' => true, 'path' => base64_encode($path)]
-            );
-        } else {
-            return response()->json(
-                ['status' => false, 'info' => '只能使用xls或者xlsx文件，当前为'.$extension]
-            );
-        }
-    }
-
-    public function do_import(Request $request)
-    {
-        if($request->getMethod() == 'GET') {
-            $path = base64_decode($request->get('_path'));
             $path = substr(__DIR__, 0, strlen(__DIR__) - 20).'storage/app/'.$path;
-            $tmp = explode('.', $path);
 
-            if(!file_exists( $path)|| count($tmp) != 2 || ($tmp[1] != 'xls' && $tmp[1] != 'xlsx')) {
-                return view('do_import', [
-                   'status' => false,
-                   'info' => '文件已经失效，请重新上传'
-                ]);
-            } else {
-                $reader = $tmp[1] == 'xls' ? new \PHPExcel_Reader_Excel5() : new \PHPExcel_Reader_Excel2007();
-                $excel = $reader->load($path);
-                $p = $excel->getActiveSheet();
-                $rows = $p->getHighestDataRow();
-                $cols = $p->getHighestDataColumn();
-                $data = [];
-                $len = ord($cols) - ord('A');
-                for ($i = 1; $i <= $rows; $i++) {
-                    $tmp = [];
-                    for ($j = 0; $j <= $len; $j++) {
-                        $val = $p->getCellByColumnAndRow($j, $i)->getValue();
-                        if(!is_null($val)) {
-                            $tmp[] = $val;
-                        }
-                    }
-                    if(count($tmp) == $len + 1)
-                        $data[] = $tmp;
-                }
-                return view('do_import', [
-                   'status' => true,
-                    'rows' => $rows,
-                    'cols' => $cols,
-                    'data' => $data,
+            $reader = $extension == 'xls' ? new \PHPExcel_Reader_Excel5() : new \PHPExcel_Reader_Excel2007();
+            $excel = $reader->load($path);
+            $p = $excel->getActiveSheet();
+            $rows = $p->getHighestDataRow();
+            $cols = $p->getHighestDataColumn();
+
+            if($cols != 'G') {
+                return response()->json([
+                    'status' => false,
+                    'info' => "缺少字段数，列数应该是7列.请检查！"
                 ]);
             }
+            $data = [];
+            $errors = '';
+            for ($i = 1; $i <= $rows; $i++) {
+                $tmp = [];
+                $val = $p->getCellByColumnAndRow(0, $i)->getValue(); //编号
+                $tmp[] = is_null($val) ? 1 : $val;
 
-        } else {
-            $data = $request->get('data');
+                $val = $p->getCellByColumnAndRow(1, $i)->getValue(); //登记时间
+                $val = str_replace('.', '-', $val);
+                $val = str_replace('/', '-', $val);
+                if(strtotime($val) == 0)
+                    $errors .= "第{$i}行，第B列登记时间错误; ";
+                else
+                    $tmp[] = strtotime($val);
+
+                $val = $p->getCellByColumnAndRow(2, $i)->getValue(); //员工名称
+                if(is_null($val) || strlen($val) == 0)
+                    $errors .= "第{$i}行，第C列员工名称错误; ";
+                else
+                    $tmp[] = $val;
+
+                $val = $p->getCellByColumnAndRow(3, $i)->getValue(); //项目名称
+                if(is_null($val) || strlen($val) == 0)
+                    $errors .= "第{$i}行，第D列项目名称错误; ";
+                else
+                    $tmp[] = $val;
+
+                $val = $p->getCellByColumnAndRow(4, $i)->getValue(); //完成工作
+                if(is_null($val) || strlen($val) == 0)
+                    $errors .= "第{$i}行，第E列完成工作错误; ";
+                else
+                    $tmp[] = $val;
+
+                $val1 = $p->getCellByColumnAndRow(5, $i)->getValue(); //计量总工
+                if(is_null($val1) || !is_numeric($val1))
+                    $errors .= "第{$i}行，第F列计量总工错误; ";
+                else
+                    $tmp[] = $val1;
+
+                $val2 = $p->getCellByColumnAndRow(6, $i)->getValue(); //综合总工
+                if(is_null($val2) || !is_numeric($val2))
+                    $errors .= "第{$i}行，第G列综合总工错误; ";
+                else
+                    $tmp[] = $val2;
+
+                //不能同时出现
+                if($val1 != 0 && $val2 != 0) {
+                    $errors .= "第{$i}行，第F, G列计量总工和综合总工不能同时填写，另一个必须为0; ";
+                    $tmp = [];
+                }
+
+                if(count($tmp) == 7)
+                    $data[] = $tmp;
+                else {
+
+                    //删除文件
+                    unlink($path);
+                    return response()->json([
+                        'status' => false,
+                        'info' => $errors,
+                    ]);
+                }
+            }
+
+            unlink($path);
+
             $mem_names = [];
             $pro_names = [];
 
@@ -345,12 +354,13 @@ class RecordController extends Controller
             $mem_names = array_unique($mem_names);
             $pro_names = array_unique($pro_names);
 
-            $res = PeopleModel::select('member_name')->get();
+            $res = PeopleModel::select('member_name', 'member_id')->get();
             $insertArg = [];
             foreach ($mem_names as $name) {
                 $find = false;
                 foreach ($res as $row) {
                     if($name == $row->member_name) {
+                        $peoMap[$row->member_name] = $row->member_id;
                         $find = true;
                     }
                 }
@@ -358,31 +368,65 @@ class RecordController extends Controller
                     $insertArg[] = [
                         'member_name' => $name,
                         'short_name' => getFirstChars($name),
-                        'department' => ''
+                        'department' => ' ',
+                        'created_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => date('Y-m-d H:i:s'),
                     ];
                 }
             }
             if(count($insertArg) != 0)
-                PeopleModel::insert($insertArg);
+                foreach ($insertArg as $arg)
+                    $peoMap[$arg['member_name']] = PeopleModel::insertGetId($arg);
 
-            $res = ProjectModel::select('project_name')->get();
+            $res = ProjectModel::select('project_name', 'project_id')->get();
             $insertArg = [];
             foreach ($pro_names as $name) {
                 $find = false;
                 foreach ($res as $row) {
                     if($name == $row->project_name) {
                         $find = true;
+                        $proMap[$row->project_name] = $row->project_id;
                     }
                 }
                 if($find == false) {
                     $insertArg[] = [
                         'project_name' => $name,
                         'short_name' => getFirstChars($name),
+                        'created_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => date('Y-m-d H:i:s'),
                     ];
                 }
             }
             if(count($insertArg) != 0)
-                PeopleModel::insert($insertArg);
+                foreach ($insertArg as  $arg)
+                    $proMap[$arg['project_name']] = ProjectModel::insertGetId($arg);
+
+            $insertArg = [];
+
+            foreach($data as $row) {
+                $insertArg[] = [
+                    'project_id' => $proMap[$row[3]],
+                    'member_id' => $peoMap[$row[2]],
+                    'content' => $row[4],
+                    'project_total1' => $row[5],
+                    'project_total2' => $row[6],
+                    'record_time' => $row[1],
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ];
+            }
+
+            RecordModel::insert($insertArg);
+
+            $len = count($insertArg);
+            return response()->json([
+                'status' => true,
+                'info' => "操作完成，上传文件总行数：{$rows}, 实际保存行数：{$len}"
+            ]);
+        } else {
+            return response()->json(
+                ['status' => false, 'info' => '只能使用xls或者xlsx文件，当前为'.$extension]
+            );
         }
     }
 }

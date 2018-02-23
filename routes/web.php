@@ -13,13 +13,18 @@
 
 Route::group(['middleware' => 'normalUser'], function() {
     Route::get('/', 'IndexController@index');
+
+    /**
+     * 查询记录，新增记录
+     */
     Route::get('insert/{project_id?}', 'RecordController@index');
     Route::post('record/insert', 'RecordController@insert');
     Route::get('record/search', 'RecordController@search');
     Route::post('record/update', 'RecordController@update');
     Route::post('record/del', 'RecordController@del');
     Route::post('upload/record', 'RecordController@import');
-    Route::any('import/record', 'RecordController@do_import');
+    Route::get('search', 'RecordController@searchPage');
+    Route::get('export/search', 'RecordController@export');
     /**
      * 项目管理 仅允许查看列表
      */
@@ -32,6 +37,8 @@ Route::group(['middleware' => 'normalUser'], function() {
         Route::get('project/search', 'ProjectController@search');
         Route::post('project/search', 'ProjectController@search');
         Route::get('export/project', 'ProjectController@export');
+        Route::post('upload/project', 'ProjectController@import');
+
     });
     Route::get('project/getList', 'ProjectController@getList');
     Route::get('project/getAllList', 'ProjectController@getAllList');
@@ -48,11 +55,9 @@ Route::group(['middleware' => 'normalUser'], function() {
         Route::get('people/search', 'PeopleController@search');
         Route::post('people/search', 'PeopleController@search');
         Route::get('export/people', 'PeopleController@export');
+        Route::post('upload/people', 'PeopleController@import');
     });
     Route::get('people/getList', 'PeopleController@getList');
-
-    Route::get('search', 'RecordController@searchPage');
-    Route::get('export/search', 'RecordController@export');
 
     Route::get('import', 'IndexController@import');
 
