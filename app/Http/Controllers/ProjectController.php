@@ -89,11 +89,7 @@ class ProjectController extends Controller
                 'project_name' => $pro[1],
                 'short_name' => getFirstChars($pro[1]),
                 'project_attr' => $pro_attr,
-                'project_total1' => $pro[6],
-                'project_total2' => $pro[7],
-                'project_total3' => $pro[8],
                 'project_stime' => strtotime($pro[9]),
-                'project_etime' => strtotime($pro[10]),
             ]);
         }
 
@@ -114,26 +110,15 @@ class ProjectController extends Controller
         else if(strlen($info[0]) >= 100)
             $errors = ['0', '字数超过限制'];
 
-        if(!isset($info[8]))
-            $errors[] = ['8', '项目开始时间为必填项'];
+        if(!isset($info[5]))
+            $errors[] = ['5 ', '项目开始时间为必填项'];
         else
-            $stime = strtotime($info[8]);
-        if(!isset($info[9]))
-            $errors[] = ['9', '项目结束时间为必填项'];
-        else
-            $etime = strtotime($info[9]);
-
-        if(isset($stime) && isset($etime) && $etime < $stime)
-            $errors[] = ['9', '结束时间不能小于开始时间'];
+            $stime = strtotime($info[5]);
 
         if(empty($errors)) {
             $pro = new ProjectModel();
             $pro->project_name = $info[0];
             $pro->project_stime = $stime;
-            $pro->project_etime = $etime;
-            $pro->project_total1 = $info[5];
-            $pro->project_total2 = $info[6];
-            $pro->project_total3 = $info[7];
             $pro->short_name = getFirstChars($info[0]);
             $pro->project_attr = json_encode([$info[1], $info[2], $info[3], $info[4]]);
             $pro->save();
@@ -162,10 +147,14 @@ class ProjectController extends Controller
         $data = [];
         if(strlen($name) == mb_strlen($name)) {
             $key = strtoupper($name);
-            $res = ProjectModel::select('project_id', 'project_name', 'project_attr', 'project_stime', 'project_etime', 'project_total1', 'project_total2', 'project_total3')
+            $res = DB::table('project')->selectRaw("project.project_id, project_name, project_attr, project_stime, SUM(record.project_total1) AS t1, SUM(record.project_total2) AS t2, MAX(record.record_time) as project_etime")
+                ->leftJoin('record', 'record.project_id', '=', 'project.project_id')
+                ->groupBy('project.project_id')
                 ->where('short_name', 'like', '%' . $key . '%')->get();
         } else {
-            $res = ProjectModel::select('project_id', 'project_name', 'project_attr', 'project_stime', 'project_etime', 'project_total1', 'project_total2', 'project_total3')
+            $res = DB::table('project')->selectRaw("project.project_id, project_name, project_attr, project_stime, SUM(record.project_total1) AS t1, SUM(record.project_total2) AS t2, MAX(record.record_time) as project_etime")
+                ->leftJoin('record', 'record.project_id', '=', 'project.project_id')
+                ->groupBy('project.project_id')
                 ->where('project_name', 'like', '%' . $name . '%')->get();
         }
         foreach ($res as $row) {
@@ -178,9 +167,9 @@ class ProjectController extends Controller
             $tmp[] = $jtmp[2];
             $tmp[] = $jtmp[3];
 
-            $tmp[] = $row->project_total1;
-            $tmp[] = $row->project_total2;
-            $tmp[] = $row->project_total3;
+            $tmp[] = round($row->t1, 2);
+            $tmp[] = round($row->t2, 2);
+            $tmp[] = round($row->t1 + $row->t2 , 2);
             $tmp[] = date('Y-m-d', $row->project_stime);
             $tmp[] = date('Y-m-d', $row->project_etime);
             $data[] = $tmp;
