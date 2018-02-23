@@ -11,6 +11,7 @@ namespace App\Http\Controllers;
 
 use App\Model\ProjectModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProjectController extends Controller
 {
@@ -27,8 +28,12 @@ class ProjectController extends Controller
         $currentPage = $request->get('currentPage');
 
         $total = ProjectModel::count();
-        $res = ProjectModel::select('project_id', 'project_name', 'project_attr', 'project_stime', 'project_etime', 'project_total1', 'project_total2', 'project_total3')
-            ->offset(($currentPage - 1) * $pms)->limit($pms)->get();
+
+        $res = DB::table('project')->selectRaw("project.project_id, project_name, project_attr, project_stime, project_etime, SUM(record.project_total1) AS t1, SUM(record.project_total2) AS t2")
+            ->leftJoin('record', 'record.project_id', '=', 'project.project_id')
+            ->groupBy('project.project_id')
+             ->limit($pms)->offset(($currentPage - 1) * $pms)
+            ->get();
         $data = [];
         foreach ($res as $row) {
             $tmp = [];
@@ -40,9 +45,9 @@ class ProjectController extends Controller
             $tmp[] = $jtmp[2];
             $tmp[] = $jtmp[3];
 
-            $tmp[] = $row->project_total1;
-            $tmp[] = $row->project_total2;
-            $tmp[] = $row->project_total3;
+            $tmp[] = round($row->t1, 2);
+            $tmp[] = round($row->t2, 2);
+            $tmp[] = round($row->t1 + $row->t2, 2);
             $tmp[] = date('Y-m-d', $row->project_stime);
             $tmp[] = date('Y-m-d', $row->project_etime);
             $data[] = $tmp;
@@ -218,7 +223,9 @@ class ProjectController extends Controller
 
     public function export(Request $request)
     {
-        $res = ProjectModel::select('project_id', 'project_name', 'project_attr', 'project_stime', 'project_etime', 'project_total1', 'project_total2', 'project_total3')
+        $res = DB::table('project')->selectRaw("project.project_id, project_name, project_attr, project_stime, project_etime, SUM(record.project_total1) AS t1, SUM(record.project_total2) AS t2")
+            ->leftJoin('record', 'record.project_id', '=', 'project.project_id')
+            ->groupBy('project.project_id')
             ->get();
 
         $excel = new \PHPExcel();
@@ -279,9 +286,9 @@ class ProjectController extends Controller
                 ->setCellValue("D".$i, $jtmp[1])
                 ->setCellValue("E".$i, $jtmp[2])
                 ->setCellValue("F".$i, $jtmp[3])
-                ->setCellValue("G".$i, $row->project_total1)
-                ->setCellValue("H".$i, $row->project_total2)
-                ->setCellValue("I".$i, $row->project_total3)
+                ->setCellValue("G".$i, round($row->t1, 2))
+                ->setCellValue("H".$i, round($row->t2, 2))
+                ->setCellValue("I".$i, round($row->t1 + $row->t2, 2))
                 ->setCellValue("J".$i, date('Y-m-d', $row->project_stime))
                 ->setCellValue("K".$i, date('Y-m-d', $row->project_etime));
             $i++;

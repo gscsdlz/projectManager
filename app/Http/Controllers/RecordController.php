@@ -9,11 +9,13 @@
 namespace App\Http\Controllers;
 
 
+use App\Model\PeopleModel;
 use App\Model\ProjectModel;
 use App\Model\RecordModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 
 class RecordController extends Controller
 {
@@ -63,13 +65,10 @@ class RecordController extends Controller
         }
         $res = DB::table('record')->insert($args);
 
-        $p = ProjectModel::select('project_total1', 'project_total2', 'project_total3', 'project_etime')
+        $p = ProjectModel::select('project_etime')
             ->where('project_id', $project_id)->first();
 
         ProjectModel::where('project_id', $project_id)->update([
-           'project_total1' => $p->project_total1 + $pt1,
-           'project_total2' => $p->project_total2 + $pt2,
-           'project_total3' => $p->project_total3 + $pt3,
            'project_etime' => max($p->project_etime,$p_etime),
         ]);
 
@@ -137,12 +136,11 @@ class RecordController extends Controller
             'project_total1' => (float)$pt1,
             'project_total2' => (float)$pt2,
         ]);
-        $total = RecordModel::selectRaw('SUM(project_total1) AS pt1, SUM(project_total2) AS pt2')
+        $p = ProjectModel::select('project_etime')
             ->where('project_id', $rec->project_id)->first();
+
         ProjectModel::where('project_id', $rec->project_id)->update([
-            'project_total1' => $total->pt1,
-            'project_total2' => $total->pt2,
-            'project_total3' => $total->pt1 + $total->pt2,
+            'project_etime' => max($p->project_etime,$record_time),
         ]);
 
         return response()->json([
@@ -207,9 +205,10 @@ class RecordController extends Controller
                 ->setCellValue("C2", "姓名")
                 ->setCellValue("D2", "项目名称")
                 ->setCellValue("E2", "工作内容")
-                ->setCellValue("F2", "工时");
+                ->setCellValue("F2", "计量总工")
+                ->setCellValue("G2", "综合总工");
 
-            $excel->getActiveSheet()->mergeCells('A1:F1');
+            $excel->getActiveSheet()->mergeCells('A1:G1');
 
             $excel->getActiveSheet()->getColumnDimension('A')->setWidth(10);
             $excel->getActiveSheet()->getColumnDimension('B')->setWidth(10);
@@ -217,6 +216,7 @@ class RecordController extends Controller
             $excel->getActiveSheet()->getColumnDimension('D')->setWidth(20);
             $excel->getActiveSheet()->getColumnDimension('E')->setWidth(40);
             $excel->getActiveSheet()->getColumnDimension('F')->setWidth(10);
+            $excel->getActiveSheet()->getColumnDimension('G')->setWidth(10);
 
             $borderStyle = [
                 'borders' => array(
@@ -225,11 +225,11 @@ class RecordController extends Controller
                     ),
                 ),
             ];
-            $p->getStyle("A1:F1")->applyFromArray($borderStyle);
-            $p->getStyle("A2:F2")->applyFromArray($borderStyle);
+            $p->getStyle("A1:G1")->applyFromArray($borderStyle);
+            $p->getStyle("A2:G2")->applyFromArray($borderStyle);
             $i = 3;
             foreach ($res as $row) {
-                $p->getStyle("A".$i.":F".$i)->applyFromArray($borderStyle);
+                $p->getStyle("A".$i.":G".$i)->applyFromArray($borderStyle);
                 $p->setCellValue("A" . $i, $row->record_id);
                 $p->setCellValue("B" . $i, date('Y-m-d', $row->record_time));
                 $p->setCellValue("C" . $i, $row->member_name);
@@ -237,10 +237,8 @@ class RecordController extends Controller
                 $p->setCellValue("D" . $i, $row->project_name);
                 $p->getStyle("E".$i)->getAlignment()->setWrapText(true);
                 $p->setCellValue("E" . $i, $row->content);
-                if($row->project_total1 == 0)
-                    $p->setCellValue("F" . $i, $row->project_total2);
-                else
-                    $p->setCellValue("F" . $i, $row->project_total1);
+                $p->setCellValue("F" . $i, $row->project_total1);
+                $p->setCellValue("G" . $i, $row->project_total2);
                 $i++;
             }
 
@@ -273,5 +271,118 @@ class RecordController extends Controller
             $res = $res->where([['record_time', '>=', $stime],['record_time', '<=', $etime] ]);
 
         return $res->get();
+    }
+
+    public function import(Request $request)
+    {
+        if(!$request->hasFile('file') || !$request->file('file')->isValid()) {
+            return response()->json(
+                ['status' => false, 'info' => '文件不存在，文件上传失败']
+            );
+        }
+        $file = $request->file('file');
+        $extension = $file->getClientOriginalExtension();
+        if ($extension == 'xls' || $extension == 'xlsx') {
+            $path = $file->storeAs('tmp', time() . rand(0, 1000) .'.'.$extension);
+            return response()->json(
+                ['status' => true, 'path' => base64_encode($path)]
+            );
+        } else {
+            return response()->json(
+                ['status' => false, 'info' => '只能使用xls或者xlsx文件，当前为'.$extension]
+            );
+        }
+    }
+
+    public function do_import(Request $request)
+    {
+        if($request->getMethod() == 'GET') {
+            $path = base64_decode($request->get('_path'));
+            $path = substr(__DIR__, 0, strlen(__DIR__) - 20).'storage/app/'.$path;
+            $tmp = explode('.', $path);
+
+            if(!file_exists( $path)|| count($tmp) != 2 || ($tmp[1] != 'xls' && $tmp[1] != 'xlsx')) {
+                return view('do_import', [
+                   'status' => false,
+                   'info' => '文件已经失效，请重新上传'
+                ]);
+            } else {
+                $reader = $tmp[1] == 'xls' ? new \PHPExcel_Reader_Excel5() : new \PHPExcel_Reader_Excel2007();
+                $excel = $reader->load($path);
+                $p = $excel->getActiveSheet();
+                $rows = $p->getHighestDataRow();
+                $cols = $p->getHighestDataColumn();
+                $data = [];
+                $len = ord($cols) - ord('A');
+                for ($i = 1; $i <= $rows; $i++) {
+                    $tmp = [];
+                    for ($j = 0; $j <= $len; $j++) {
+                        $val = $p->getCellByColumnAndRow($j, $i)->getValue();
+                        if(!is_null($val)) {
+                            $tmp[] = $val;
+                        }
+                    }
+                    if(count($tmp) == $len + 1)
+                        $data[] = $tmp;
+                }
+                return view('do_import', [
+                   'status' => true,
+                    'rows' => $rows,
+                    'cols' => $cols,
+                    'data' => $data,
+                ]);
+            }
+
+        } else {
+            $data = $request->get('data');
+            $mem_names = [];
+            $pro_names = [];
+
+            foreach ($data as $row) {
+                $mem_names[] = $row[2];
+                $pro_names[] = $row[3];
+            }
+            $mem_names = array_unique($mem_names);
+            $pro_names = array_unique($pro_names);
+
+            $res = PeopleModel::select('member_name')->get();
+            $insertArg = [];
+            foreach ($mem_names as $name) {
+                $find = false;
+                foreach ($res as $row) {
+                    if($name == $row->member_name) {
+                        $find = true;
+                    }
+                }
+                if($find == false) {
+                    $insertArg[] = [
+                        'member_name' => $name,
+                        'short_name' => getFirstChars($name),
+                        'department' => ''
+                    ];
+                }
+            }
+            if(count($insertArg) != 0)
+                PeopleModel::insert($insertArg);
+
+            $res = ProjectModel::select('project_name')->get();
+            $insertArg = [];
+            foreach ($pro_names as $name) {
+                $find = false;
+                foreach ($res as $row) {
+                    if($name == $row->project_name) {
+                        $find = true;
+                    }
+                }
+                if($find == false) {
+                    $insertArg[] = [
+                        'project_name' => $name,
+                        'short_name' => getFirstChars($name),
+                    ];
+                }
+            }
+            if(count($insertArg) != 0)
+                PeopleModel::insert($insertArg);
+        }
     }
 }
