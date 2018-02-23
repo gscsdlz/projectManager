@@ -12,6 +12,8 @@
     <script src="{{ URL::asset('js/bootstrap-datepicker.min.js') }}"></script>
     <script src="{{ URL::asset('js/dynamicTables.js') }}"></script>
     <script src="{{ URL::asset('js/formCheck.js') }}"></script>
+    <script src="{{ URL::asset('js/AjaxFileUpload.js') }}"></script>
+
 </head>
 <body>
 <nav class="navbar navbar-inverse">
