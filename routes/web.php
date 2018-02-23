@@ -18,7 +18,8 @@ Route::group(['middleware' => 'normalUser'], function() {
     Route::get('record/search', 'RecordController@search');
     Route::post('record/update', 'RecordController@update');
     Route::post('record/del', 'RecordController@del');
-
+    Route::post('upload/record', 'RecordController@import');
+    Route::any('import/record', 'RecordController@do_import');
     /**
      * 项目管理 仅允许查看列表
      */
