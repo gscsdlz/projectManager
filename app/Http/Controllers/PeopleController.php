@@ -226,4 +226,105 @@ class PeopleController extends Controller
         $objWriter = \PHPExcel_IOFactory::createWriter($excel, 'Excel5');
         $objWriter->save('php://output');
     }
+
+    public function import(Request $request)
+    {
+        if(!$request->hasFile('file') || !$request->file('file')->isValid()) {
+            return response()->json(
+                ['status' => false, 'info' => '文件不存在，文件上传失败']
+            );
+        }
+        $file = $request->file('file');
+        $extension = $file->getClientOriginalExtension();
+        if ($extension == 'xls' || $extension == 'xlsx') {
+            $path = $file->storeAs('tmp', time() . rand(0, 1000) .'.'.$extension);
+            $path = substr(__DIR__, 0, strlen(__DIR__) - 20).'storage/app/'.$path;
+
+            $reader = $extension == 'xls' ? new \PHPExcel_Reader_Excel5() : new \PHPExcel_Reader_Excel2007();
+            $excel = $reader->load($path);
+            $p = $excel->getActiveSheet();
+            $rows = $p->getHighestDataRow();
+            $cols = $p->getHighestDataColumn();
+
+            if($cols != 'C') {
+                return response()->json([
+                    'status' => false,
+                    'info' => "缺少字段数，列数应该是3列.请检查！"
+                ]);
+            }
+            $data = [];
+            $errors = '';
+            for ($i = 1; $i <= $rows; $i++) {
+                $tmp = [];
+                $val = $p->getCellByColumnAndRow(0, $i)->getValue(); //编号
+                $tmp[] = is_null($val) ? 1 : $val;
+
+                $val = $p->getCellByColumnAndRow(1, $i)->getValue(); //姓名
+                if(is_null($val) || strlen($val) == 0)
+                    $errors .= "第{$i}行，第B列姓名错误; ";
+                else
+                    $tmp[] = $val;
+
+                $val = $p->getCellByColumnAndRow(2, $i)->getValue(); //部门名称
+                if(is_null($val) || strlen($val) == 0)
+                    $errors .= "第{$i}行，第C列部门名称错误; ";
+                else
+                    $tmp[] = $val;
+
+
+                if(count($tmp) == 3)
+                    $data[] = $tmp;
+                else {
+
+                    //删除文件
+                    unlink($path);
+                    return response()->json([
+                        'status' => false,
+                        'info' => $errors,
+                    ]);
+                }
+            }
+
+            unlink($path);
+
+            $res = PeopleModel::select('member_name', 'member_id')->get();
+            $updateArg = [];
+            $insertArg = [];
+            foreach ($data as $name) {
+                $find = false;
+                foreach ($res as $row) {
+                    if($name[1] == $row->member_name) {
+                        $find = true;
+                        $updateArg[$row->member_id] = [
+                            'department' => $name[2]
+                        ];
+                    }
+                }
+                if ($find == false) {
+                    $insertArg[] = [
+                        'member_name' => $name[1],
+                        'short_name' => getFirstChars($name[1]),
+                        'department' => $name[2],
+                        'created_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ];
+                }
+            }
+            if (count($insertArg) != 0)
+                PeopleModel::insert($insertArg);
+            foreach ($updateArg as $id => $arg) {
+                PeopleModel::where('member_id', $id)->update($arg);
+            }
+
+            $len = count($data);
+            return response()->json([
+                'status' => true,
+                'info' => "操作完成，上传文件总行数：{$rows}, 实际保存行数：{$len}"
+            ]);
+        } else {
+            return response()->json(
+                ['status' => false, 'info' => '只能使用xls或者xlsx文件，当前为'.$extension]
+            );
+        }
+    }
 }

@@ -13,7 +13,7 @@
         <form class="form-horizontal well" role="form" method="post" action="" enctype="multipart/form-data">
             <div class="form-group">
                 <div class="col-sm-12">
-                    <ul>
+                    <ul class="text-danger">
                         <li>此处上传员工数据</li>
                         <li>仅能使用xls或者xlsx，由WPS或者Excel生成</li>
                         <li>文件第一行即为数据，不能包含标题和表格头</li>
