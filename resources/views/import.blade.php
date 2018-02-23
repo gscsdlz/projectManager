@@ -9,7 +9,25 @@
         <button class="btn btn-primary" type="button">导入项目数据</button>
         @endif
         <button class="btn btn-primary" type="button">导入进度数据</button>
-
+        <hr/>
+        <form class="form-horizontal well" role="form" method="post" action="" enctype="multipart/form-data">
+            <div class="form-group">
+                <div class="col-sm-12">
+                    <ul>
+                        <li>此处上传进度数据</li>
+                        <li>仅能使用xls或者xlsx，由WPS或者Excel生成</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-6">
+                    <label>请选择xls或者xlsx文件：<input class="form-control" type="file" name="file" id="uploadFile" /></label>
+                </div>
+            </div>
+            <div id="alert" class="alert alert-danger alert-dismissible fade in" role="alert">
+                <h4 id="info"></h4>
+            </div>
+        </form>
         <hr/>
 
         @if(Session::get('privilege') == 1)
@@ -20,4 +38,23 @@
         <hr/>
     </div>
 </div>
+
+<script>
+    $(document).ready(function () {
+        $("#alert").hide();
+
+        $("#uploadFile").AjaxFileUpload({
+            action : '{{ URL('upload/record') }}',
+            onComplete : function(filename, response) {
+                response = eval("("+ /\{.*\}/.exec(response) + ")");
+                if(response.status == true) {
+                    window.location.href = '{{ URL('import/record?_path=') }}' + response.path;
+                } else {
+                    $("#info").html(response.info);
+                    $("#alert").show();
+                }
+            }
+        })
+    })
+</script>
 @endsection
