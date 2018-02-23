@@ -72,11 +72,17 @@ class PeopleController extends Controller
 
         $infos = $request->get('infos');
         foreach ($infos as $pro) {
-            PeopleModel::where('member_id', $pro[0])->update([
-                'member_name' => $pro[1],
-                'department' => $pro[2],
-                'short_name' => getFirstChars($pro[1])
-            ]);
+            $c = PeopleModel::where([
+                ['member_id', '!=', $pro[0]],
+                ['member_name', $pro[1]]
+            ])->count();
+            if($c == 0) {
+                PeopleModel::where('member_id', $pro[0])->update([
+                    'member_name' => $pro[1],
+                    'department' => $pro[2],
+                    'short_name' => getFirstChars($pro[1])
+                ]);
+            }
         }
 
         return response()->json([
@@ -93,6 +99,10 @@ class PeopleController extends Controller
         $errors = [];
         if(!isset($info[0]) || strlen($info[0]) == 0)
             $errors[] = ['0', '姓名不能为空'];
+        else {
+            if(PeopleModel::where('member_name', $info[0])->count() != 0)
+                $errors[] = ['0', '姓名重复'];
+        }
 
         if(!isset($info[1]) || strlen($info[1]) == 0)
             $errors[] = ['1', '部门名称不能为空'];
