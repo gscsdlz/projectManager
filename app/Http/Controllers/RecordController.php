@@ -263,6 +263,7 @@ class RecordController extends Controller
                 $p->setCellValue("D" . $i, $row[2]);
                 $i++;
             }
+            $excel->setActiveSheetIndex(0);
 
             header('Content-Type: application/vnd.ms-excel');
             header('Content-Disposition: attachment;filename="记录结果表.xls"');
