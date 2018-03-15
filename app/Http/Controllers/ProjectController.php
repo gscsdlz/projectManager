@@ -14,8 +14,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use phpDocumentor\Reflection\Project;
 
+/**
+ * Class ProjectController
+ * @package App\Http\Controllers
+ *
+ * 项目管理类，管理项目的CURD，以及导入导出
+ */
 class ProjectController extends Controller
 {
+    /**
+     * @param Request $request
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     * 显示界面
+     */
     public function index(Request $request)
     {
         return view('projectManager', [
@@ -23,6 +34,11 @@ class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 获取项目信息，计算得到工时信息，和项目而结束时间。
+     */
     public function get(Request $request)
     {
         $pms = config('web.proManagerPageMax');
@@ -66,6 +82,11 @@ class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 删除项目 删除失败自动提示JSON回应 配置在APP\Exceptions\Handler.php@45
+     */
     public function dels(Request $request)
     {
         $ids = $request->get('ids');
@@ -80,6 +101,11 @@ class ProjectController extends Controller
             ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 保存项目信息，仅能修改少量数据
+     */
     public function save(Request $request)
     {
         $infos = $request->get('infos');
@@ -98,6 +124,11 @@ class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 添加项目
+     */
     public function add(Request $request)
     {
         $info = $request->get('info');
@@ -135,6 +166,11 @@ class ProjectController extends Controller
 
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\JsonResponse|\Illuminate\View\View
+     * 搜索项目，支持拼音简写搜索或者中文搜索，二者选一
+     */
     public function search(Request $request)
     {
         if($request->getMethod() == 'GET') {
@@ -180,6 +216,11 @@ class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 用于录入时选择项目信息，侧边栏
+     */
     public function getList(Request $request)
     {
         $page = $request->get('page', 1);
@@ -196,6 +237,11 @@ class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 用于搜索时的项目信息，包含全名和短名称
+     */
     public function getAllList(Request $request)
     {
         $res = ProjectModel::select('project_id', 'project_name', 'short_name')
@@ -214,6 +260,13 @@ class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @throws \PHPExcel_Exception
+     * @throws \PHPExcel_Reader_Exception
+     * @throws \PHPExcel_Writer_Exception
+     * 导出数据
+     */
     public function export(Request $request)
     {
         $res = DB::table('project')->selectRaw("project.project_id, project_name, project_attr, project_stime, SUM(record.project_total1) AS t1, SUM(record.project_total2) AS t2, MAX(record.record_time) AS project_etime")
@@ -295,6 +348,12 @@ class ProjectController extends Controller
         $objWriter->save('php://output');
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \PHPExcel_Exception
+     * 从xls、xlsx导入数据文件
+     */
     public function import(Request $request)
     {
         if(!$request->hasFile('file') || !$request->file('file')->isValid()) {
@@ -422,3 +481,22 @@ class ProjectController extends Controller
         }
     }
 }
+
+/**
+ * SQL整理
+ * DELETE FROM project WHERE project_id IN (?,?);
+ *
+ * UPDATE project SET project_name = ?, short_name = ?,project_attr = ?, project_stime = ?, updated_at = ? WHERE project_id = ?
+ *
+ * INSERT INTO project (project_name, short_name, project_attr, project_stime, created_at) VALUES (?,?,?,?,?)
+ *
+ * SELECT project.project_id, project_name, project_attr, project_stime, SUM(record.project_total1) AS t1, SUM(record.project_total2) AS t2, MAX(record.record_time) as project_etime FROM
+ *      project LEFT JOIN record USING (project_id) GROUP BY(project.project_id) WHERE
+ *      short_name LIKE ? ? project_name LIKE ?
+ *
+ * SELECT project_id, project_name FROM project LIMIT ?, ?
+ *
+ * SELECT project_id, project_name, short_name FROM project WHERE 1
+ *
+ *
+ */
