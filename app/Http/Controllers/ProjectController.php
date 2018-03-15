@@ -106,7 +106,7 @@ class ProjectController extends Controller
         if(!isset($info[0]) || strlen($info[0]) == 0)
             $errors[] = ['0', '项目名称不能为空'];
         else if(ProjectModel::where('project_name', $info[0])->count() != 0)
-                $errors = ['0', '项目名称重复'];
+            $errors[] = ['0', '项目名称重复'];
         else if(strlen($info[0]) >= 100)
             $errors = ['0', '字数超过限制'];
 
