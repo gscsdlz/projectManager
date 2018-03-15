@@ -41,6 +41,8 @@ class ProjectController extends Controller
      */
     public function get(Request $request)
     {
+        LogController::insertLog("获得项目信息", $request);
+
         $pms = config('web.proManagerPageMax');
         $currentPage = $request->get('currentPage');
 
@@ -89,6 +91,8 @@ class ProjectController extends Controller
      */
     public function dels(Request $request)
     {
+        LogController::insertLog("删除项目", $request);
+
         $ids = $request->get('ids');
 
         $row = ProjectModel::destroy($ids);
@@ -108,6 +112,8 @@ class ProjectController extends Controller
      */
     public function save(Request $request)
     {
+        LogController::insertLog("保存项目", $request);
+
         $infos = $request->get('infos');
         foreach ($infos as $pro) {
             $pro_attr = json_encode([$pro[2], $pro[3], $pro[4], $pro[5]]);
@@ -131,6 +137,8 @@ class ProjectController extends Controller
      */
     public function add(Request $request)
     {
+        LogController::insertLog("新增一组项目文件", $request);
+
         $info = $request->get('info');
 
         $errors = [];
@@ -173,6 +181,8 @@ class ProjectController extends Controller
      */
     public function search(Request $request)
     {
+        LogController::insertLog("搜索项目", $request);
+
         if($request->getMethod() == 'GET') {
             return view('projectManager', [
                 'menu' => 'projectManager',
@@ -269,6 +279,8 @@ class ProjectController extends Controller
      */
     public function export(Request $request)
     {
+        LogController::insertLog("导出项目", $request);
+
         $res = DB::table('project')->selectRaw("project.project_id, project_name, project_attr, project_stime, SUM(record.project_total1) AS t1, SUM(record.project_total2) AS t2, MAX(record.record_time) AS project_etime")
             ->leftJoin('record', 'record.project_id', '=', 'project.project_id')
             ->groupBy('project.project_id')
@@ -356,6 +368,8 @@ class ProjectController extends Controller
      */
     public function import(Request $request)
     {
+        LogController::insertLog("导入项目", $request);
+
         if(!$request->hasFile('file') || !$request->file('file')->isValid()) {
             return response()->json(
                 ['status' => false, 'info' => '文件不存在，文件上传失败']
