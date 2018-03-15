@@ -14,8 +14,18 @@ use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
+/**
+ * Class UserController
+ * @package App\Http\Controllers
+ * 用户管理，控制用户登录以及一些Session设置
+ */
 class UserController
 {
+    /**
+     * @param Request $request
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     * 显示界面
+     */
     public function index(Request $request)
     {
         return view('user', [
@@ -23,12 +33,20 @@ class UserController
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 显示全部用户信息，不分页，转义部分内容
+     */
     public function show(Request $request)
     {
         LogController::insertLog("请求显示用户", $request);
 
         $data = [];
 
+        /**
+         * 管理员可以修改数据
+         */
         if (Session::get('privilege') == 1) {
             $res = UserModel::get();
 
@@ -45,6 +63,10 @@ class UserController
             }
 
         } else {
+            /**
+             * 非管理仅仅可以查看并修改自己的信息
+             */
+
             $row = UserModel::where('user_id', Session::get('user_id'))->first();
             $data[] = [
                 $row->user_id,
@@ -63,6 +85,11 @@ class UserController
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 删除用户信息，
+     */
     public function dels(Request $request)
     {
         LogController::insertLog("删除用户", $request);
@@ -79,6 +106,11 @@ class UserController
             ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 保存用户信息
+     */
     public function save(Request $request)
     {
         LogController::insertLog("保存用户信息", $request);
@@ -97,6 +129,11 @@ class UserController
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 添加用户
+     */
     public function add(Request $request)
     {
         LogController::insertLog("添加用户", $request);
@@ -132,6 +169,11 @@ class UserController
 
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 修改密码
+     */
     public function changePass(Request $request)
     {
         LogController::insertLog("用户修改密码", $request);
@@ -166,6 +208,11 @@ class UserController
         }
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse|\Illuminate\View\View
+     * 处理用户登录
+     */
     public function login(Request $request)
     {
         if($request->getMethod() == "POST") {
@@ -202,6 +249,11 @@ class UserController
         }
     }
 
+    /**
+     * @param Request $request
+     * @return $this
+     * 处理用户退出登录
+     */
     public function logout(Request $request)
     {
         LogController::insertLog("退出登录", $request);
