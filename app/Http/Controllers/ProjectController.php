@@ -512,5 +512,7 @@ class ProjectController extends Controller
  *
  * SELECT project_id, project_name, short_name FROM project WHERE 1
  *
+ * SELECT COUNT(*) FROM project WHERE 1
  *
+ * SELECT COUNT(*) FROM project WHERE project_name = ?
  */

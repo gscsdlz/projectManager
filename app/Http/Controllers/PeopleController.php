@@ -12,9 +12,18 @@ namespace App\Http\Controllers;
 use App\Model\PeopleModel;
 use Symfony\Component\HttpFoundation\Request;
 
-
+/**
+ * Class PeopleController
+ * @package App\Http\Controllers
+ * 管理员工数据，并非管理员
+ */
 class PeopleController extends Controller
 {
+    /**
+     * @param Request $request
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     * 显示界面
+     */
     public function index(Request $request)
     {
         return view('peopleManager', [
@@ -22,6 +31,11 @@ class PeopleController extends Controller
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 显示员工信息，分页显示
+     */
     public function get(Request $request)
     {
         LogController::insertLog("显示参与人员信息", $request);
@@ -51,6 +65,11 @@ class PeopleController extends Controller
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 删除员工信息
+     */
     public function dels(Request $request)
     {
         LogController::insertLog("删除指定参与人员", $request);
@@ -66,6 +85,11 @@ class PeopleController extends Controller
             ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 保存员工信息
+     */
     public function save(Request $request)
     {
         LogController::insertLog("修改并保存指定参与人员", $request);
@@ -90,6 +114,11 @@ class PeopleController extends Controller
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 新增员工数据
+     */
     public function add(Request $request)
     {
         LogController::insertLog("新增一个参与人员", $request);
@@ -123,6 +152,11 @@ class PeopleController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\JsonResponse|\Illuminate\View\View
+     * 搜索员工数据，首字母或者拼音搜索
+     */
     public function search(Request $request)
     {
         LogController::insertLog("搜索参与人员", $request);
@@ -160,10 +194,13 @@ class PeopleController extends Controller
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 获取员工简要列表信息，用于筛选
+     */
     public function getList(Request $request)
     {
-        LogController::insertLog("获取全部参与人员列表", $request);
-
         $res = PeopleModel::select('member_id', 'member_name', 'short_name')->get();
         $data = [];
         foreach($res as $row) {
@@ -179,10 +216,16 @@ class PeopleController extends Controller
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @throws \PHPExcel_Exception
+     * @throws \PHPExcel_Reader_Exception
+     * @throws \PHPExcel_Writer_Exception
+     * 导出员工信息
+     */
     public function export(Request $request)
     {
         LogController::insertLog("导出参与人员信息", $request);
-
 
         $excel = new \PHPExcel();
         $excel->getProperties()->setCreator("PHPExcel")
@@ -227,6 +270,12 @@ class PeopleController extends Controller
         $objWriter->save('php://output');
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \PHPExcel_Exception
+     * 导入员工信息
+     */
     public function import(Request $request)
     {
         if(!$request->hasFile('file') || !$request->file('file')->isValid()) {
@@ -328,3 +377,26 @@ class PeopleController extends Controller
         }
     }
 }
+
+/**
+ * SQL整理
+ * SELECT member_id, member_name, department， created_at, updated_at FROM member LIMIT ?, ?
+ *
+ * DELETE FROM member WHERE member_id IN (? ,?)
+ *
+ * SELECT COUNT(*) FROM member
+ *
+ * SELECT COUNT(*) FROM member_id = ? AND member_name = ?
+ *
+ * UPDATE member SET  'member_name = ?, department = ?, short_name = ?, updated_at = ? WHERE member_id = ?
+ *
+ * SELECT member_id, member_name, short_name, department, created_at, updated_at
+ *      WHERE short_name LIKE %?% / WHERE member_name LIKE %?%
+ *
+ * SELECT member_id, member_name, short_name WHERE 1
+ *
+ * INSERT INTO member (member_name, department, short_name, created_at) VALUES (?, ?, ?, ?)
+ *
+ * SELECT * FROM member WHERE 1
+ *
+ */
