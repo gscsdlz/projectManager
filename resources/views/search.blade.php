@@ -45,23 +45,52 @@
 <hr/>
 <div class="row">
     <div class="col-md-8 col-md-offset-2">
-        <h3>搜索结果，共计<span id="resLen">0</span>条</h3>
-        <nav aria-label="Page navigation" class="text-right">
-            <ul class="pagination">
+        <div>
+            <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">搜索结果</a></li>
+                <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">员工汇总</a></li>
             </ul>
-        </nav>
-        <table class="table table-bordered" id="table">
-            <tr>
-                <th style="width:5%">编号</th>
-                <th style="width:15%">项目名称</th>
-                <th style="width:10%">员工名称</th>
-                <th style="width:10%">综合总工</th>
-                <th style="width:10%">计量总工</th>
-                <th style="width:35%">完成工作</th>
-                <th style="width:10%">登记时间</th>
-                <th style="width:5%">操作</th>
-            </tr>
-        </table>
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="home">
+                    <h3>搜索结果，共计<span id="resLen">0</span>条</h3>
+                    <nav aria-label="Page navigation" class="text-right">
+                        <ul class="pagination">
+                        </ul>
+                    </nav>
+                    <table class="table table-bordered table-hover" id="table">
+                        <tr>
+                            <th style="width:5%">编号</th>
+                            <th style="width:15%">项目名称</th>
+                            <th style="width:10%">员工名称</th>
+                            <th style="width:10%">计量总工</th>
+                            <th style="width:10%">综合总工</th>
+                            <th style="width:35%">完成工作</th>
+                            <th style="width:10%">登记时间</th>
+                            <th style="width:5%">操作</th>
+                        </tr>
+                    </table>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="profile">
+                    <h3>员工汇总</h3>
+                    <hr/>
+                    <table class="table table-bordered table-hover" id="total">
+                        <tr>
+                            <th>员工姓名</th>
+                            <th>计量总工合计</th>
+                            <th>综合总工合计</th>
+                            <th>工日合计</th>
+                            <th></th>
+                            <th>员工姓名</th>
+                            <th>计量总工合计</th>
+                            <th>综合总工合计</th>
+                            <th>工日合计</th>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
     </div>
 </div>
 <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel">
@@ -286,7 +315,26 @@
                 $.get("{{ URL('record/search?')  }}" + "member_id=" + member_id + "&project_id=" + project_id + "&stime=" + stime + "&etime=" + etime,
                     function (response) {
                         if(response.status == true) {
+
                             res = response.res;
+                            $("#total").children(":gt(0)").remove();
+                            var str = "";
+                            for(var i = 0; i < response.members.length; i += 2) {
+                                str += '<tr>' +
+                                    '<td>'+response.members[i][0]+'</td>' +
+                                    '<td>'+response.members[i][1]+'</td>' +
+                                    '<td>'+response.members[i][2]+'</td>' +
+                                    '<td>'+response.members[i][3]+'</td>' +
+                                    '<td></td>'
+                                if(i < response.members.length - 1) {
+                                    str += '<td>'+response.members[i+1][0]+'</td>' +
+                                        '<td>'+response.members[i+1][1]+'</td>' +
+                                        '<td>'+response.members[i+1][2]+'</td>' +
+                                        '<td>'+response.members[i+1][3]+'</td>' +
+                                        '</tr>'
+                                }
+                            }
+                            $("#total").append(str);
                             page = 1;
                             update_table();
                             $("#search").html("搜索")

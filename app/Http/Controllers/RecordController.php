@@ -77,15 +77,21 @@ class RecordController extends Controller
         LogController::insertLog("查询进度", $request);
 
         $res = $this->getSearchResult($request);
+
         if($res === false) {
             return response()->json([
                 'status' => false,
                 'info' => '时间错误',
             ]);
         } else {
+            $members = [];
+            foreach ($res[1] as $name=>$row) {
+                $members[] = [$name, $row[0], $row[1], $row[2]];
+            }
             return response()->json([
                 'status' => true,
-                'res' => $res,
+                'res' => $res[0],
+                'members' =>  $members,
             ]);
         }
     }
@@ -165,7 +171,9 @@ class RecordController extends Controller
     {
         LogController::insertLog("导出查询结果", $request);
 
-        $res = $this->getSearchResult($request);
+        $data = $this->getSearchResult($request);
+        $res = $data[0];
+        $members = $data[1];
         if($res !== false) {
             $excel = new \PHPExcel();
 
@@ -187,6 +195,7 @@ class RecordController extends Controller
                 ->setCellValue("E2", "工作内容")
                 ->setCellValue("F2", "计量总工")
                 ->setCellValue("G2", "综合总工");
+            $p->setTitle("记录结果");
 
             $excel->getActiveSheet()->mergeCells('A1:G1');
 
@@ -221,6 +230,39 @@ class RecordController extends Controller
                 $p->setCellValue("G" . $i, $row->project_total2);
                 $i++;
             }
+            $excel->addSheet(new \PHPExcel_Worksheet($excel, "员工汇总"));
+            $p = $excel->setActiveSheetIndex(1);
+            $p->setCellValue("A1", "员工工时汇总")
+                ->setCellValue("A2", "员工姓名")
+                ->setCellValue("B2", "计量总工")
+                ->setCellValue("C2", "综合总工")
+                ->setCellValue("D2", "工日合计");
+
+            $excel->getActiveSheet()->mergeCells('A1:D1');
+
+            $excel->getActiveSheet()->getColumnDimension('A')->setWidth(10);
+            $excel->getActiveSheet()->getColumnDimension('B')->setWidth(10);
+            $excel->getActiveSheet()->getColumnDimension('C')->setWidth(10);
+            $excel->getActiveSheet()->getColumnDimension('D')->setWidth(20);
+
+            $borderStyle = [
+                'borders' => array(
+                    'allborders' => array(
+                        'style' => \PHPExcel_Style_Border::BORDER_THIN,
+                    ),
+                ),
+            ];
+            $p->getStyle("A1:D1")->applyFromArray($borderStyle);
+            $p->getStyle("A2:D2")->applyFromArray($borderStyle);
+            $i = 3;
+            foreach ($members as $name => $row) {
+                $p->getStyle("A".$i.":D".$i)->applyFromArray($borderStyle);
+                $p->setCellValue("A" . $i, $name);
+                $p->setCellValue("B" . $i, $row[0]);
+                $p->setCellValue("C" . $i, $row[1]);
+                $p->setCellValue("D" . $i, $row[2]);
+                $i++;
+            }
 
             header('Content-Type: application/vnd.ms-excel');
             header('Content-Disposition: attachment;filename="记录结果表.xls"');
@@ -250,7 +292,21 @@ class RecordController extends Controller
         if($etime != 0 && $stime != 0)
             $res = $res->where([['record_time', '>=', $stime],['record_time', '<=', $etime] ]);
 
-        return $res->get();
+        $info = $res->get();
+
+        /**
+         * 统计员工信息
+         */
+        $members = [];
+        foreach ($info as $row) {
+            if (!isset($members[$row->member_name])) {
+                $members[$row->member_name] = [0, 0, 0];
+            }
+            $members[$row->member_name][0] += $row->project_total1;
+            $members[$row->member_name][1] += $row->project_total2;
+            $members[$row->member_name][2] += $row->project_total1 + $row->project_total2;
+        }
+        return [$info, $members];
     }
 
     public function import(Request $request)
