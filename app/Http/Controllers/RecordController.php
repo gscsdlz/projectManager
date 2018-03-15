@@ -17,8 +17,19 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Class RecordController
+ * @package App\Http\Controllers
+ * 项目的核心类，用于处理项目的进度数据，协调员工信息与项目信息
+ */
 class RecordController extends Controller
 {
+    /**
+     * @param Request $request
+     * @param int $project_id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     * 显示进度录入界面
+     */
     public function index(Request $request, $project_id = 0)
     {
         LogController::insertLog("进度录入界面切换", $request);
@@ -36,6 +47,11 @@ class RecordController extends Controller
             ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 添加一组进度数据
+     */
     public function insert(Request $request)
     {
         LogController::insertLog("新增进度", $request);
@@ -47,7 +63,6 @@ class RecordController extends Controller
         $pt1 = 0.0;
         $pt2 = 0.0;
         $pt3 = 0.0;
-        $p_etime = $p_etime = (strtotime($date));
 
         foreach ($data as $row) {
             $pt1 += (float)$row[1];
@@ -72,6 +87,11 @@ class RecordController extends Controller
 
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 查询进度数据，
+     */
     public function search(Request $request)
     {
         LogController::insertLog("查询进度", $request);
@@ -96,12 +116,22 @@ class RecordController extends Controller
         }
     }
 
+    /**
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     * 显示搜索界面
+     */
     public function searchPage(){
         return view('search', [
             'menu' => 'search'
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 修改进度数据，管理员修改不限，普通用户目前修改登记日期三天内的数据
+     * 并非插入数据的时间
+     */
     public function update(Request $request)
     {
         $record_id = $request->get('record_id');
@@ -141,6 +171,12 @@ class RecordController extends Controller
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 删除进度数据
+     * 管理员不限制，普通用户仅能删除三年之内
+     */
     public function del(Request $request)
     {
         $record_id = $request->get('record_id');
@@ -167,6 +203,14 @@ class RecordController extends Controller
 
     }
 
+    /**
+     * @param Request $request
+     * @throws \PHPExcel_Exception
+     * @throws \PHPExcel_Reader_Exception
+     * @throws \PHPExcel_Writer_Exception
+     *
+     * 导出进度信息
+     */
     public function export(Request $request)
     {
         LogController::insertLog("导出查询结果", $request);
@@ -273,6 +317,12 @@ class RecordController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     * @return array|bool
+     * 获得搜索结果，公共函数，被导出和搜索界面处同时调用接收时间、用户、项目参数
+     * 返回两部分结果、一个是进度数据，一个是按照员工分类以后的工时数据
+     */
     protected function getSearchResult(Request $request)
     {
         $mid = $request->get('member_id', 0);
@@ -310,6 +360,12 @@ class RecordController extends Controller
         return [$info, $members];
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \PHPExcel_Exception
+     * 导入进度数据
+     */
     public function import(Request $request)
     {
         if(!$request->hasFile('file') || !$request->file('file')->isValid()) {
