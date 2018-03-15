@@ -317,7 +317,7 @@
                         if(response.status == true) {
 
                             res = response.res;
-                            $("#total").children(":gt(0)").remove();
+                            $("#total").children().eq(0).children(":gt(0)").remove();
                             var str = "";
                             for(var i = 0; i < response.members.length; i += 2) {
                                 str += '<tr>' +
