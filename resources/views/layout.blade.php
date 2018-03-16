@@ -42,6 +42,7 @@
                 @if(Session::get('privilege') == 1)
                     <li @if(isset($menu) && $menu == 'logManager')class="active"@endif><a href="{{ URL('log') }}">操作日志</a></li>
                 @endif
+                <li><a href="{{ URL('file/工程项目管理软件.pdf') }}">操作手册</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li><a href="{{ URL('logout') }}">{{ Session::get('username') }} / 退出登录</a></li>
