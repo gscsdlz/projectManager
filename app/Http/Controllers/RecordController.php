@@ -543,3 +543,23 @@ class RecordController extends Controller
         }
     }
 }
+
+/**
+ * SQL整理
+ * SELECT project_id, project_name FROM project WHERE project_id = ?
+ *
+ * INSERT INTO record (project_id, member_id, project_total1, project_total2, content, created_at, record_time)
+ *      VALUES(?,?,?,?,?,?)
+ *
+ * SELECT record_id, content, record_time, record.project_total1, record.project_total2, project_name, member_name
+ *      FROM record LEFT JOIN project USING(project_id)
+ *      LEFT JOIN member USING(member_id)
+ *      WHERE record.project_id = ? AND record.member_id = ? AND record_time >= ? record_time <= ?
+ *
+ * SELECT record_time, project_id FROM record WHERE record_id = ?
+ *
+ * UPDATE record SET content = ?, record_time = ?, project_total1 = ?, project_total2 = ?
+ *      WHERE record_id = ?
+ *
+ * SELECT record_time, project_id WHERE record_id = ?
+ */
