@@ -62,7 +62,7 @@
                         <td colspan="3">仅限内部使用</td>
                     </tr>
                     <tr>
-                        <td colspan="3">Version 1.0.0 || Developed & Design By gscsdlz</td>
+                        <td colspan="3">Version 1.0.1 || Developed & Design By gscsdlz</td>
 
                     </tr>
                 </table>
