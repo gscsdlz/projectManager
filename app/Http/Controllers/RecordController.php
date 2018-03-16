@@ -562,4 +562,6 @@ class RecordController extends Controller
  *      WHERE record_id = ?
  *
  * SELECT record_time, project_id WHERE record_id = ?
+ *
+ * DELETE FROM record WHERE record_id IN (?, ?)
  */
