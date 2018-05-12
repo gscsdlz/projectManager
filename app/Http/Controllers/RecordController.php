@@ -48,6 +48,33 @@ class RecordController extends Controller
     }
 
     /**
+     * 用户显示已经存档的项目的录入
+     * @param Request $request
+     * @param int $project_id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    public function endedIndex(Request $request, $project_id =  0)
+    {
+        LogController::insertLog("进度录入界面切换", $request);
+
+        $project = ProjectModel::select("project_id", "project_name")->where([
+            ['project_id', $project_id],
+            ['ended', '1']
+        ])->first();
+
+        if(is_null($project))
+            return view('ended', [
+                'menu' => 'ended'
+            ]);
+        else
+            return view('ended', [
+                'project_name' => $project->project_name,
+                'project_id' => $project->project_id,
+                'menu' => 'ended'
+            ]);
+    }
+
+    /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      * 添加一组进度数据

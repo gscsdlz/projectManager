@@ -18,6 +18,7 @@ Route::group(['middleware' => 'normalUser'], function() {
      * 查询记录，新增记录
      */
     Route::get('insert/{project_id?}', 'RecordController@index');
+    Route::get('ended/{project_id?}', 'RecordController@endedIndex');
     Route::post('record/insert', 'RecordController@insert');
     Route::get('record/search', 'RecordController@search');
     Route::post('record/update', 'RecordController@update');
@@ -41,6 +42,7 @@ Route::group(['middleware' => 'normalUser'], function() {
 
     });
     Route::get('project/getList', 'ProjectController@getList');
+    Route::get('project/getEndList', 'ProjectController@getEndList');
     Route::get('project/getAllList', 'ProjectController@getAllList');
 
     /**

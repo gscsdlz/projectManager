@@ -37,6 +37,7 @@
                 @endif
                 <li @if(isset($menu) && $menu == 'search')class="active"@endif><a href="{{ URL('search') }}">查询</a></li>
                 <li @if(isset($menu) && $menu == 'insert')class="active"@endif><a href="{{  URL('insert') }}">进度录入</a></li>
+                <li @if(isset($menu) && $menu == 'ended')class="active"@endif><a href="{{  URL('ended') }}">存档项目</a></li>
                 <li @if(isset($menu) && $menu == 'import')class="active"@endif><a href="{{ URL('import') }}">导入导出</a></li>
                 <li @if(isset($menu) && $menu == 'userManager')class="active"@endif><a href="{{ URL('user') }}">用户管理</a></li>
                 @if(Session::get('privilege') == 1)

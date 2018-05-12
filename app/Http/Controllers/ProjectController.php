@@ -48,7 +48,7 @@ class ProjectController extends Controller
 
         $total = ProjectModel::count();
 
-        $res = DB::table('project')->selectRaw("project.project_id, project_name, project_attr, project_stime, SUM(record.project_total1) AS t1, SUM(record.project_total2) AS t2, MAX(record.record_time) as project_etime")
+        $res = DB::table('project')->selectRaw("project.project_id, project_name, project_attr, ended, project_stime, SUM(record.project_total1) AS t1, SUM(record.project_total2) AS t2, MAX(record.record_time) as project_etime")
             ->leftJoin('record', 'record.project_id', '=', 'project.project_id')
             ->groupBy('project.project_id')
              ->limit($pms)->offset(($currentPage - 1) * $pms)
@@ -72,6 +72,7 @@ class ProjectController extends Controller
                 $tmp[] = "暂无记录";
             else
                 $tmp[] = date('Y-m-d', $row->project_etime);
+            $tmp[] = $row->ended;
             $data[] = $tmp;
         }
 
@@ -122,6 +123,7 @@ class ProjectController extends Controller
                 'short_name' => getFirstChars($pro[1]),
                 'project_attr' => $pro_attr,
                 'project_stime' => strtotime($pro[9]),
+                'ended' => $pro[11]
             ]);
         }
 
@@ -160,6 +162,7 @@ class ProjectController extends Controller
             $pro->project_stime = $stime;
             $pro->short_name = getFirstChars($info[0]);
             $pro->project_attr = json_encode([$info[1], $info[2], $info[3], $info[4]]);
+            $pro->ended = $info[6];
             $pro->save();
             return response()->json([
                 'status' => true
@@ -239,6 +242,27 @@ class ProjectController extends Controller
         if($page > (int)(($total - 1) / $pms) + 1)
             $page = (int)(($total - 1) / $pms) + 1;
         $res = ProjectModel::select('project_id', 'project_name')
+            ->offset(($page - 1) * $pms)->limit($pms)->get();
+        return response()->json([
+            'status' => true,
+            'page' => $page,
+            'data' => $res,
+        ]);
+    }
+
+    /**
+     * 显示已经存档的项目
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getEndList(Request $request)
+    {
+        $page = $request->get('page', 1);
+        $pms = config('web.proManagerPageMax');
+        $total = ProjectModel::count();
+        if($page > (int)(($total - 1) / $pms) + 1)
+            $page = (int)(($total - 1) / $pms) + 1;
+        $res = ProjectModel::select('project_id', 'project_name')->where('ended', '1')
             ->offset(($page - 1) * $pms)->limit($pms)->get();
         return response()->json([
             'status' => true,
