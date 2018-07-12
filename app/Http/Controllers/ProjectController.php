@@ -241,7 +241,7 @@ class ProjectController extends Controller
         $total = ProjectModel::count();
         if($page > (int)(($total - 1) / $pms) + 1)
             $page = (int)(($total - 1) / $pms) + 1;
-        $res = ProjectModel::select('project_id', 'project_name')
+        $res = ProjectModel::select('project_id', 'project_name')->where('ended', '0')
             ->offset(($page - 1) * $pms)->limit($pms)->get();
         return response()->json([
             'status' => true,
