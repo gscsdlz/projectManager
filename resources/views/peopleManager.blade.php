@@ -28,7 +28,7 @@
             @endif
             $("#people").dynamicTables({
                 'title': [
-                    "编号", "员工姓名", "所属部门", "创建时间", "上次修改时间"
+                    "编号", "员工姓名", "所属部门", "创建时间", "上次修改时间", "是否离职"
                 ],
                 'data': res.data,
                 'currentPage': res.currentPage,
@@ -43,6 +43,13 @@
                     {'type': 'text'},
                     {'edit': false},
                     {'edit': false},
+                    {
+                        'type' : 'select',
+                        'options' : [
+                            ['1', '已离职'],
+                            ['0', '未离职'],
+                        ]
+                    }
                 ]
             });
         })

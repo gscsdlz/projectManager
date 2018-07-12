@@ -43,7 +43,7 @@ class PeopleController extends Controller
         $pms = config('web.peoManagerPageMax');
         $currentPage = $request->get('currentPage', 1);
         $total = PeopleModel::count();
-        $res = PeopleModel::select('member_id', 'member_name', 'department', 'created_at', 'updated_at')
+        $res = PeopleModel::select('member_id', 'member_name', 'department', 'created_at', 'updated_at', 'ended')
             ->offset(($currentPage - 1) * $pms)->limit($pms)->get();
         $data = [];
         foreach ($res as $row) {
@@ -53,6 +53,8 @@ class PeopleController extends Controller
             $tmp[] = $row->department;
             $tmp[] = $row->created_at->toDateString();
             $tmp[] = $row->updated_at->toDateString();
+            $tmp[] = $row->ended;
+
             $data[] = $tmp;
         }
 
@@ -104,7 +106,8 @@ class PeopleController extends Controller
                 PeopleModel::where('member_id', $pro[0])->update([
                     'member_name' => $pro[1],
                     'department' => $pro[2],
-                    'short_name' => getFirstChars($pro[1])
+                    'short_name' => getFirstChars($pro[1]),
+                    'ended' => $pro[5],
                 ]);
             }
         }
@@ -140,6 +143,8 @@ class PeopleController extends Controller
             $peo->member_name = $info[0];
             $peo->department = $info[1];
             $peo->short_name = getFirstChars($info[0]);
+            $peo->ended = $info[2];
+
             $peo->save();
             return response()->json([
                 'status' => true
@@ -201,7 +206,9 @@ class PeopleController extends Controller
      */
     public function getList(Request $request)
     {
-        $res = PeopleModel::select('member_id', 'member_name', 'short_name')->get();
+        $res = PeopleModel::select('member_id', 'member_name', 'short_name')
+            ->where('ended', '0')
+            ->get();
         $data = [];
         foreach($res as $row) {
             $data[] = [
